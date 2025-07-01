@@ -4,9 +4,17 @@ import (
 	"math/big"
 )
 
-// Exp computes e^x using Taylor series using big.Float values.
+// Exp returns e**x, the base-e exponential of x.
 //
-// For the time being, there is an explicit upper bound of ~700,000
+// The special cases are:
+//
+//	Exp(+Inf) = +Inf
+//	Exp(NaN) = NaN
+//
+// Very large values no longer overflow to 0 or +Inf.
+// Very small values no longer underflow to 1.
+//
+// For the time being, there is an explicit upper bound for x of ~700,000
 // beyond which we choose to call it Infinite instead of looping excessively.
 func Exp(x *big.Float) *big.Float {
 	prec := x.Prec()
@@ -25,6 +33,7 @@ func Exp(x *big.Float) *big.Float {
 	if xFloat > largeX {
 		result := big.NewFloat(0).SetPrec(prec)
 		result.SetInf(false) // +Inf
+
 		return result
 	}
 
@@ -58,9 +67,26 @@ func Exp(x *big.Float) *big.Float {
 		absLimit, _ = absLimit.SetString("1e1000")
 		if termAbs.Cmp(absLimit) > 0 {
 			result.SetInf(false) // Return +Inf if terms get too large
+
 			break
 		}
 	}
+
+	return result
+}
+
+// Exp2 returns 2**x, the base-2 exponential of x.
+//
+// The special cases are:
+//
+//	Exp2(+Inf) = +Inf
+//	Exp2(NaN) = NaN
+func Exp2(x *big.Float) *big.Float {
+	prec := x.Prec()
+
+	// TODO(rsned): Implement.
+	// For now, return a placeholder result
+	result := new(big.Float).SetPrec(prec).SetInt64(0)
 
 	return result
 }

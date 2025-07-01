@@ -173,6 +173,24 @@ func TestExpHighPrecision(t *testing.T) {
 	}
 }
 
+func BenchmarkExpVsMathExp(b *testing.B) {
+	x := new(big.Float).SetPrec(64)
+	x.SetFloat64(5.0)
+
+	b.Run("BigMath_Exp", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			_ = Exp(x)
+		}
+	})
+
+	b.Run("StdLib_Exp", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = math.Exp(5.0)
+		}
+	})
+}
+
 // Benchmarks for Exp function
 func BenchmarkExpSpecific(b *testing.B) {
 	tests := []struct {
@@ -195,5 +213,15 @@ func BenchmarkExpSpecific(b *testing.B) {
 				_ = Exp(test.x)
 			}
 		})
+	}
+}
+
+func BenchmarkExp2(b *testing.B) {
+	x := new(big.Float).SetPrec(64)
+	x.SetFloat64(1025.3)
+
+	b.ResetTimer()
+	for b.Loop() {
+		Exp2(x)
 	}
 }
