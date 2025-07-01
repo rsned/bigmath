@@ -194,7 +194,7 @@ func TestStirlingApproximation(t *testing.T) {
 
 	for _, test := range tests {
 		// Get Stirling's approximation
-		stirlingResult := StirlingApproximation(big.NewFloat(test.input))
+		stirlingResult := stirlingApproximation(big.NewFloat(test.input))
 		stirlingFloat, _ := stirlingResult.Float64()
 
 		// Get the actual factorial for comparison
@@ -229,7 +229,7 @@ func TestStirlingApproximationVsKnownValues(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		stirlingResult := StirlingApproximation(big.NewFloat(test.n))
+		stirlingResult := stirlingApproximation(big.NewFloat(test.n))
 		stirlingString := stirlingResult.Text('f', 0)
 
 		// Use our helper function to see how many digits match
@@ -271,7 +271,7 @@ func TestStirlingApproximationEdgeCases(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result := StirlingApproximation(big.NewFloat(test.input))
+		result := stirlingApproximation(big.NewFloat(test.input))
 		resultFloat, _ := result.Float64()
 
 		isValid := !math.IsNaN(resultFloat) && !math.IsInf(resultFloat, 0) && resultFloat > 0
