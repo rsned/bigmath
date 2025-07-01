@@ -1,10 +1,33 @@
 package bigmath
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 	"testing"
+)
+
+var (
+	sinMethods = []benchAndCompare{
+		{"Sin", Sin, math.Sin},
+		{"SinArgReduction", sinArgReduction, math.Sin},
+		{"SinCORDIC", sinCORDIC, math.Sin},
+		{"SinCORDICImproved", sinCORDICImproved, math.Sin},
+		{"SinGoSource", sinGoSource, math.Sin},
+		{"SinMinimax", sinMinimax, math.Sin},
+		{"SinTaylor", sinTaylor, math.Sin},
+		{"SinTaylorReduced", sinTaylorReduced, math.Sin},
+	}
+
+	asinMethods = []benchAndCompare{
+		{"Asin", Asin, math.Asin},
+	}
+
+	sinhMethods = []benchAndCompare{
+		{"Sinh", Sinh, math.Sinh},
+	}
+	asinhMethods = []benchAndCompare{
+		{"Asinh", Asinh, math.Asinh},
+	}
 )
 
 func TestSin(t *testing.T) {
@@ -292,31 +315,18 @@ func BenchmarkSinVsMathSin(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Sin(x)
-		}
-	})
-
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			math.Sin(math.Pi / 3.0)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, sinMethods[0], x)
 }
 
 func BenchmarkSinPrecision(b *testing.B) {
-	for _, prec := range precisions {
-		b.Run(fmt.Sprintf("prec=%d", prec), func(b *testing.B) {
-			x := new(big.Float).SetPrec(prec)
-			x.SetFloat64(math.Pi / 3.0)
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
 
-			b.ResetTimer()
-			for b.Loop() {
-				Sin(x)
-			}
-		})
-	}
+	benchmarkBigmathFunctionVsPrecision(b, sinMethods[0], x)
+}
+
+func BenchmarkSinInternalFunctions(b *testing.B) {
+	runTrigBenchmark(b, sinMethods, precisions)
 }
 
 func BenchmarkAsin(b *testing.B) {
@@ -333,17 +343,14 @@ func BenchmarkAsinVsMathAsin(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Asin(x)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, asinMethods[0], x)
+}
 
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			math.Asin(math.Pi / 3.0)
-		}
-	})
+func BenchmarkAsinPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, asinMethods[0], x)
 }
 
 func BenchmarkSinh(b *testing.B) {
@@ -356,6 +363,13 @@ func BenchmarkSinh(b *testing.B) {
 	}
 }
 
+func BenchmarkSinhVsMathSinh(b *testing.B) {
+	x := new(big.Float).SetPrec(64)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathVsStdlib(b, sinhMethods[0], x)
+}
+
 func BenchmarkAsinh(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
@@ -366,7 +380,23 @@ func BenchmarkAsinh(b *testing.B) {
 	}
 }
 
-// Basic timing benchmark.
-func BenchmarkSinInternalFunctions(b *testing.B) {
-	runTrigBenchmark(b, sinMethods, precisions)
+func BenchmarkSinhPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, sinhMethods[0], x)
+}
+
+func BenchmarkAsinhVsMathAsinh(b *testing.B) {
+	x := new(big.Float).SetPrec(64)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathVsStdlib(b, asinhMethods[0], x)
+}
+
+func BenchmarkAsinhPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, asinhMethods[0], x)
 }

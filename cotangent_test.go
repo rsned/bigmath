@@ -7,6 +7,24 @@ import (
 	"testing"
 )
 
+var (
+	cotMethods = []benchAndCompare{
+		{"Cot", Cot, func(x float64) float64 { return math.Cos(x) / math.Sin(x) }},
+	}
+
+	cothMethods = []benchAndCompare{
+		{"Coth", Coth, func(x float64) float64 { return math.Cosh(x) / math.Sinh(x) }},
+	}
+
+	acotMethods = []benchAndCompare{
+		{"Acot", Acot, func(x float64) float64 { return math.Atan(1 / x) }},
+	}
+
+	acothMethods = []benchAndCompare{
+		{"Acoth", Acoth, func(x float64) float64 { return math.Atanh(1 / x) }},
+	}
+)
+
 func TestCot(t *testing.T) {
 	testCases := []struct {
 		name      string
@@ -88,31 +106,14 @@ func BenchmarkCotVsMathCot(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Cot(x)
-		}
-	})
-
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			_ = math.Cos(math.Pi/3.0) / math.Sin(math.Pi/3.0)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, cotMethods[0], x)
 }
 
 func BenchmarkCotPrecision(b *testing.B) {
-	for _, prec := range precisions {
-		b.Run(fmt.Sprintf("prec=%d", prec), func(b *testing.B) {
-			x := new(big.Float).SetPrec(prec)
-			x.SetFloat64(math.Pi / 3.0)
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
 
-			b.ResetTimer()
-			for b.Loop() {
-				Cot(x)
-			}
-		})
-	}
+	benchmarkBigmathFunctionVsPrecision(b, cotMethods[0], x)
 }
 
 func BenchmarkAcot(b *testing.B) {
@@ -129,17 +130,21 @@ func BenchmarkAcotVsMathAcot(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Acot(x)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, acotMethods[0], x)
+}
 
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			math.Atan(1 / math.Tan(math.Pi/3.0))
-		}
-	})
+func BenchmarkCothPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(64)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, cothMethods[0], x)
+}
+
+func BenchmarkAcothPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, acothMethods[0], x)
 }
 
 func BenchmarkCoth(b *testing.B) {

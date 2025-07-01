@@ -468,9 +468,27 @@ func BenchmarkGammaFloat64(b *testing.B) {
 
 	for _, tc := range testCases {
 		b.Run(tc.name, func(b *testing.B) {
-			for i := 0; i < b.N; i++ {
+			b.ResetTimer()
+			for b.Loop() {
 				_ = GammaFloat64(tc.input)
 			}
 		})
 	}
+}
+
+func BenchmarkMemoryAllocationGamma(b *testing.B) {
+	b.Run("Gamma_10", func(b *testing.B) {
+		b.ReportAllocs()
+		x := big.NewFloat(10)
+		for b.Loop() {
+			_ = Gamma(x)
+		}
+	})
+
+	b.Run("GammaFloat64_10", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			_ = GammaFloat64(10)
+		}
+	})
 }

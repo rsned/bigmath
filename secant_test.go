@@ -7,6 +7,25 @@ import (
 	"testing"
 )
 
+var (
+	secMethods = []benchAndCompare{
+		{"Sec", Sec, func(x float64) float64 { return 1 / math.Cos(x) }},
+		{"SecSeries", secSeries, func(x float64) float64 { return 1 / math.Cos(x) }},
+	}
+
+	sechMethods = []benchAndCompare{
+		{"Sech", Sech, func(x float64) float64 { return 1 / math.Cosh(x) }},
+	}
+
+	asecMethods = []benchAndCompare{
+		{"Asec", Asec, func(x float64) float64 { return math.Acos(1 / x) }},
+	}
+
+	asechMethods = []benchAndCompare{
+		{"Asech", Asech, func(x float64) float64 { return math.Acosh(1 / x) }},
+	}
+)
+
 func TestSecant(t *testing.T) {
 	testCases := []struct {
 		name      string
@@ -87,31 +106,18 @@ func BenchmarkSecVsMathSec(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Sec(x)
-		}
-	})
-
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			_ = 1 / math.Cos(math.Pi/3.0)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, secMethods[0], x)
 }
 
 func BenchmarkSecPrecision(b *testing.B) {
-	for _, prec := range precisions {
-		b.Run(fmt.Sprintf("prec=%d", prec), func(b *testing.B) {
-			x := new(big.Float).SetPrec(prec)
-			x.SetFloat64(math.Pi / 3.0)
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
 
-			b.ResetTimer()
-			for b.Loop() {
-				Sec(x)
-			}
-		})
-	}
+	benchmarkBigmathFunctionVsPrecision(b, secMethods[0], x)
+}
+
+func BenchmarkSecInternalFunctions(b *testing.B) {
+	runTrigBenchmark(b, secMethods, precisions)
 }
 
 func BenchmarkAsec(b *testing.B) {
@@ -128,17 +134,14 @@ func BenchmarkAsecVsMathAsec(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Asec(x)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, asecMethods[0], x)
+}
 
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			math.Acos(1 / math.Cos(math.Pi/3.0))
-		}
-	})
+func BenchmarkAsecPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, asecMethods[0], x)
 }
 
 func BenchmarkSech(b *testing.B) {
@@ -151,6 +154,13 @@ func BenchmarkSech(b *testing.B) {
 	}
 }
 
+func BenchmarkSechPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, sechMethods[0], x)
+}
+
 func BenchmarkAsech(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
@@ -161,7 +171,9 @@ func BenchmarkAsech(b *testing.B) {
 	}
 }
 
-// Basic timing benchmark.
-func BenchmarkSecInternalFunctions(b *testing.B) {
-	runTrigBenchmark(b, secMethods, precisions)
+func BenchmarkAsechPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, asechMethods[0], x)
 }

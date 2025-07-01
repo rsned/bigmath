@@ -7,6 +7,27 @@ import (
 	"testing"
 )
 
+var (
+	tanMethods = []benchAndCompare{
+		{"Tan", Tan, math.Tan},
+		{"TanTaylor", tanTaylor, math.Tan},
+		{"TanCORDIC", tanCORDIC, math.Tan},
+		{"TanContinuedFraction", tanContinuedFraction, math.Tan},
+	}
+
+	atanMethods = []benchAndCompare{
+		{"Atan", Atan, math.Atan},
+	}
+
+	tanhMethods = []benchAndCompare{
+		{"Tanh", Tanh, math.Tanh},
+	}
+
+	atanhMethods = []benchAndCompare{
+		{"Atanh", Atanh, math.Atanh},
+	}
+)
+
 func TestTan(t *testing.T) {
 	tolerance := 1e-11
 	testCases := []struct {
@@ -90,31 +111,18 @@ func BenchmarkTanVsMathTan(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Tan(x)
-		}
-	})
-
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			math.Tan(1.0)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, tanMethods[0], x)
 }
 
 func BenchmarkTanPrecisionBits(b *testing.B) {
-	for _, prec := range precisions {
-		b.Run(fmt.Sprintf("%d_bits", prec), func(b *testing.B) {
-			x := new(big.Float).SetPrec(prec)
-			x.SetFloat64(math.Pi / 3.0)
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
 
-			b.ResetTimer()
-			for b.Loop() {
-				Tan(x)
-			}
-		})
-	}
+	benchmarkBigmathFunctionVsPrecision(b, tanMethods[0], x)
+}
+
+func BenchmarkTanInternalFunctions(b *testing.B) {
+	runTrigBenchmark(b, tanMethods, precisions)
 }
 
 func BenchmarkAtan(b *testing.B) {
@@ -131,17 +139,14 @@ func BenchmarkAtanVsMathAtan(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Atan(x)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, atanMethods[0], x)
+}
 
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			math.Atan(math.Pi / 3.0)
-		}
-	})
+func BenchmarkAtanPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, atanMethods[0], x)
 }
 
 func BenchmarkTanh(b *testing.B) {
@@ -154,6 +159,20 @@ func BenchmarkTanh(b *testing.B) {
 	}
 }
 
+func BenchmarkTanhVsMathTanh(b *testing.B) {
+	x := new(big.Float).SetPrec(64)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathVsStdlib(b, tanhMethods[0], x)
+}
+
+func BenchmarkTanhPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, tanhMethods[0], x)
+}
+
 func BenchmarkAtanh(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
@@ -164,7 +183,16 @@ func BenchmarkAtanh(b *testing.B) {
 	}
 }
 
-// Basic timing benchmark.
-func BenchmarkTanInternalFunctions(b *testing.B) {
-	runTrigBenchmark(b, tanMethods, precisions)
+func BenchmarkAtanhVsMathAtanh(b *testing.B) {
+	x := new(big.Float).SetPrec(64)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathVsStdlib(b, atanhMethods[0], x)
+}
+
+func BenchmarkAtanhPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, atanhMethods[0], x)
 }

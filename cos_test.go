@@ -7,6 +7,26 @@ import (
 	"testing"
 )
 
+var (
+	cosMethods = []benchAndCompare{
+		{"Cos", Cos, math.Cos},
+		{"CosArgReduction", cosArgReduction, math.Cos},
+		{"CosCORDIC", cosCORDIC, math.Cos},
+	}
+
+	coshMethods = []benchAndCompare{
+		{"Cosh", Cosh, math.Cosh},
+	}
+
+	acosMethods = []benchAndCompare{
+		{"Acos", Acos, math.Acos},
+	}
+
+	acoshMethods = []benchAndCompare{
+		{"Acosh", Acosh, math.Acosh},
+	}
+)
+
 func TestCos(t *testing.T) {
 	testCases := []struct {
 		name      string
@@ -88,31 +108,18 @@ func BenchmarkCosVsMathCos(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Cos(x)
-		}
-	})
-
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			math.Cos(math.Pi / 3.0)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, cosMethods[0], x)
 }
 
 func BenchmarkCosPrecision(b *testing.B) {
-	for _, prec := range precisions {
-		b.Run(fmt.Sprintf("prec=%d", prec), func(b *testing.B) {
-			x := new(big.Float).SetPrec(prec)
-			x.SetFloat64(math.Pi / 3.0)
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
 
-			b.ResetTimer()
-			for b.Loop() {
-				Cos(x)
-			}
-		})
-	}
+	benchmarkBigmathFunctionVsPrecision(b, cosMethods[0], x)
+}
+
+func BenchmarkCosInternalFunctions(b *testing.B) {
+	runTrigBenchmark(b, cosMethods, precisions)
 }
 
 func BenchmarkAcos(b *testing.B) {
@@ -129,17 +136,14 @@ func BenchmarkAcosVsMathAcos(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Acos(x)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, acosMethods[0], x)
+}
 
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			math.Acos(math.Pi / 3.0)
-		}
-	})
+func BenchmarkAcosPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, acosMethods[0], x)
 }
 
 func BenchmarkCosh(b *testing.B) {
@@ -152,6 +156,20 @@ func BenchmarkCosh(b *testing.B) {
 	}
 }
 
+func BenchmarkCoshVsMathCosh(b *testing.B) {
+	x := new(big.Float).SetPrec(64)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathVsStdlib(b, coshMethods[0], x)
+}
+
+func BenchmarkCoshPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, coshMethods[0], x)
+}
+
 func BenchmarkAcosh(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
@@ -162,7 +180,16 @@ func BenchmarkAcosh(b *testing.B) {
 	}
 }
 
-// Basic timing benchmark.
-func BenchmarkCosInternalFunctions(b *testing.B) {
-	runTrigBenchmark(b, cosMethods, precisions)
+func BenchmarkAcoshVsMathAcosh(b *testing.B) {
+	x := new(big.Float).SetPrec(64)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathVsStdlib(b, acoshMethods[0], x)
+}
+
+func BenchmarkAcoshPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, acoshMethods[0], x)
 }

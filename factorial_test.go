@@ -1,6 +1,7 @@
 package bigmath
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"strings"
@@ -282,5 +283,63 @@ func TestStirlingApproximationEdgeCases(t *testing.T) {
 			t.Logf("stirlingApproximation(%v) = %.6e (valid: %v)",
 				test.input, resultFloat, isValid)
 		}
+	}
+}
+
+// BenchmarkFactorial benchmarks the Factorial function with various input sizes
+func BenchmarkFactorial(b *testing.B) {
+	testCases := []struct {
+		name  string
+		input float64
+	}{
+		{"Small_5", 5},
+		{"Medium_50", 50},
+		{"Large_100", 100},
+		{"VeryLarge_200", 200},
+		{"Fractional_5.5", 5.5},
+	}
+
+	for _, tc := range testCases {
+		b.Run(tc.name, func(b *testing.B) {
+			x := big.NewFloat(tc.input)
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_ = FactorialFloat(x)
+			}
+		})
+	}
+}
+
+// BenchmarkMemoryAllocation benchmarks memory allocation patterns
+func BenchmarkMemoryAllocationFactorial(b *testing.B) {
+	b.Run("Factorial_50", func(b *testing.B) {
+		b.ReportAllocs()
+		x := big.NewFloat(50)
+		for i := 0; i < b.N; i++ {
+			_ = FactorialFloat(x)
+		}
+	})
+
+	b.Run("Factorial_100", func(b *testing.B) {
+		b.ReportAllocs()
+		x := big.NewFloat(100)
+		for i := 0; i < b.N; i++ {
+			_ = FactorialFloat(x)
+		}
+	})
+}
+
+// BenchmarkScaling tests how performance scales with input size
+func BenchmarkScalingFactorial(b *testing.B) {
+	sizes := []float64{10, 50, 100, 200}
+
+	for _, size := range sizes {
+		b.Run(fmt.Sprintf("Factorial_%.0f", size), func(b *testing.B) {
+			x := big.NewFloat(size)
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_ = FactorialFloat(x)
+			}
+		})
 	}
 }

@@ -7,6 +7,24 @@ import (
 	"testing"
 )
 
+var (
+	cscMethods = []benchAndCompare{
+		{"Csc", Csc, func(x float64) float64 { return 1 / math.Sin(x) }},
+	}
+
+	cschMethods = []benchAndCompare{
+		{"Csch", Csch, func(x float64) float64 { return 1 / math.Sinh(x) }},
+	}
+
+	acscMethods = []benchAndCompare{
+		{"Acsc", Acsc, func(x float64) float64 { return math.Asin(1 / x) }},
+	}
+
+	acschMethods = []benchAndCompare{
+		{"Acsch", Acsch, func(x float64) float64 { return math.Asinh(1 / x) }},
+	}
+)
+
 func TestCsc(t *testing.T) {
 	testCases := []struct {
 		name      string
@@ -90,31 +108,14 @@ func BenchmarkCscVsMathCsc(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Csc(x)
-		}
-	})
-
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			_ = 1 / math.Sin(1.0)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, cscMethods[0], x)
 }
 
 func BenchmarkCscPrecision(b *testing.B) {
-	for _, prec := range precisions {
-		b.Run(fmt.Sprintf("prec=%d", prec), func(b *testing.B) {
-			x := new(big.Float).SetPrec(prec)
-			x.SetFloat64(math.Pi / 3.0)
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
 
-			b.ResetTimer()
-			for b.Loop() {
-				Csc(x)
-			}
-		})
-	}
+	benchmarkBigmathFunctionVsPrecision(b, cscMethods[0], x)
 }
 
 func BenchmarkAcsc(b *testing.B) {
@@ -131,17 +132,14 @@ func BenchmarkAcscVsMathAcsc(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(math.Pi / 3.0)
 
-	b.Run("BigMath", func(b *testing.B) {
-		for b.Loop() {
-			Acsc(x)
-		}
-	})
+	benchmarkBigmathVsStdlib(b, acscMethods[0], x)
+}
 
-	b.Run("MathLib", func(b *testing.B) {
-		for b.Loop() {
-			math.Acos(1 / math.Sin(math.Pi/3.0))
-		}
-	})
+func BenchmarkAcscPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, acscMethods[0], x)
 }
 
 func BenchmarkCsch(b *testing.B) {
@@ -153,6 +151,19 @@ func BenchmarkCsch(b *testing.B) {
 		Csch(x)
 	}
 }
+func BenchmarkCschVsMathCsch(b *testing.B) {
+	x := new(big.Float).SetPrec(64)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathVsStdlib(b, cschMethods[0], x)
+}
+
+func BenchmarkCschPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, cschMethods[0], x)
+}
 
 func BenchmarkAcsch(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
@@ -162,4 +173,18 @@ func BenchmarkAcsch(b *testing.B) {
 	for b.Loop() {
 		Acsch(x)
 	}
+}
+
+func BenchmarkAcschVsMathAcsch(b *testing.B) {
+	x := new(big.Float).SetPrec(64)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathVsStdlib(b, acschMethods[0], x)
+}
+
+func BenchmarkAcschPrecision(b *testing.B) {
+	x := new(big.Float).SetPrec(maxTestingPrecision)
+	x.SetFloat64(math.Pi / 3.0)
+
+	benchmarkBigmathFunctionVsPrecision(b, acschMethods[0], x)
 }

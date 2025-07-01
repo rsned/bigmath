@@ -40,68 +40,6 @@ var (
 		{"Acoth", Acoth, func(x float64) float64 { return math.Atanh(1 / x) }},
 	}
 
-	// TODO(rsned): Move these to their respective files.
-	sinMethods = []benchAndCompare{
-		{"Sin", Sin, math.Sin},
-		{"SinArgReduction", sinArgReduction, math.Sin},
-		{"SinCORDIC", sinCORDIC, math.Sin},
-		{"SinCORDICImproved", sinCORDICImproved, math.Sin},
-		{"SinGoSource", sinGoSource, math.Sin},
-		{"SinMinimax", sinMinimax, math.Sin},
-		{"SinTaylor", sinTaylor, math.Sin},
-		{"SinTaylorReduced", sinTaylorReduced, math.Sin},
-	}
-
-	cosMethods = []benchAndCompare{
-		{"Cos", Cos, math.Cos},
-		{"CosArgReduction", cosArgReduction, math.Cos},
-		{"CosCORDIC", cosCORDIC, math.Cos},
-	}
-
-	tanMethods = []benchAndCompare{
-		{"Tan", Tan, math.Tan},
-		{"TanTaylor", tanTaylor, math.Tan},
-		{"TanCORDIC", tanCORDIC, math.Tan},
-		{"TanContinuedFraction", tanContinuedFraction, math.Tan},
-	}
-
-	cscMethods = []benchAndCompare{
-		{"Csc", Csc, func(x float64) float64 { return 1 / math.Sin(x) }},
-	}
-
-	secMethods = []benchAndCompare{
-		{"Sec", Sec, func(x float64) float64 { return 1 / math.Cos(x) }},
-		{"SecSeries", secSeries, func(x float64) float64 { return 1 / math.Cos(x) }},
-	}
-
-	cotMethods = []benchAndCompare{
-		{"Cot", Cot, func(x float64) float64 { return math.Cos(x) / math.Sin(x) }},
-	}
-
-	sinhMethods = []benchAndCompare{
-		{"Sinh", Sinh, math.Sinh},
-	}
-
-	coshMethods = []benchAndCompare{
-		{"Cosh", Cosh, math.Cosh},
-	}
-
-	tanhMethods = []benchAndCompare{
-		{"Tanh", Tanh, math.Tanh},
-	}
-
-	sechMethods = []benchAndCompare{
-		{"Sech", Sech, func(x float64) float64 { return 1 / math.Cosh(x) }},
-	}
-
-	cschMethods = []benchAndCompare{
-		{"Csch", Csch, func(x float64) float64 { return 1 / math.Sinh(x) }},
-	}
-
-	cothMethods = []benchAndCompare{
-		{"Coth", Coth, func(x float64) float64 { return math.Cosh(x) / math.Sinh(x) }},
-	}
-
 	// Throughout the trig tests, there are a number of common cases related
 	// to Pi that are used to test the accuracy of the different algorithms.
 	specialTrigValues = []float64{
@@ -138,17 +76,7 @@ func BenchmarkTrigVsStdLib(b *testing.B) {
 	x.SetFloat64(0.9876)
 
 	for _, method := range trigPublicMethods {
-		b.Run(method.name, func(b *testing.B) {
-			for b.Loop() {
-				method.fnBigmath(x)
-			}
-		})
-
-		b.Run(method.name+"_StdLib", func(b *testing.B) {
-			for b.Loop() {
-				method.fnStdlib(0.9876)
-			}
-		})
+		benchmarkBigmathVsStdlib(b, method, x)
 	}
 }
 
@@ -159,11 +87,7 @@ func BenchmarkTrigPrecisionScaling(b *testing.B) {
 		x.SetFloat64(0.9876)
 
 		for _, method := range trigPublicMethods {
-			b.Run(fmt.Sprintf("%s_%d_precs", method.name, prec), func(b *testing.B) {
-				for b.Loop() {
-					method.fnBigmath(x)
-				}
-			})
+			benchmarkBigmathFunctionVsPrecision(b, method, x)
 		}
 	}
 }
