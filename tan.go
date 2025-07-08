@@ -130,7 +130,7 @@ func tanContinuedFraction(x *big.Float) *big.Float {
 	negateResult := false
 	reciprocal := false
 
-	// Simple argument reduction to [-π/4, π/4] for better convergence
+	// Aggressive argument reduction to [-π/8, π/8] for optimal convergence
 	reducedX := new(big.Float).SetPrec(prec).Set(x)
 
 	// Handle negative values: tan(-x) = -tan(x)
@@ -140,6 +140,120 @@ func tanContinuedFraction(x *big.Float) *big.Float {
 	}
 
 	// Reduce argument using tan(x) periodicity and symmetries
+	twoPi := new(big.Float).SetPrec(prec).Mul(bigPi, big.NewFloat(2))
+	for reducedX.Cmp(twoPi) >= 0 {
+		reducedX.Sub(reducedX, bigPi)
+	}
+
+	// Use tan(π - x) = -tan(x) for [π/2, π]
+	if reducedX.Cmp(bigHalfPi) > 0 {
+		reducedX.Sub(bigPi, reducedX)
+		negateResult = !negateResult
+	}
+
+	// Use tan(π/2 - x) = cot(x) = 1/tan(x) for [π/4, π/2]
+	if reducedX.Cmp(bigQuarterPi) > 0 {
+		reducedX.Sub(bigHalfPi, reducedX)
+		reciprocal = !reciprocal
+	}
+
+	// Further reduce to [0, π/8] using tan(2x) = 2tan(x)/(1-tan²(x))
+	eighthPi := new(big.Float).SetPrec(prec).Quo(bigPi, big.NewFloat(8))
+	subdivisions := 0
+	for reducedX.Cmp(eighthPi) > 0 && subdivisions < 3 {
+		reducedX.Quo(reducedX, big.NewFloat(2))
+		subdivisions++
+	}
+
+	// For very small values, use direct Taylor expansion
+	threshold := new(big.Float).SetPrec(prec).Quo(
+		big.NewFloat(1),
+		new(big.Float).SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(prec/8)), nil)),
+	)
+	if reducedX.Cmp(threshold) < 0 {
+		result := new(big.Float).SetPrec(prec).Set(reducedX)
+		// Apply subdivision doubling formula if needed
+		for i := 0; i < subdivisions; i++ {
+			// tan(2x) = 2*tan(x) / (1 - tan²(x))
+			tanSquared := new(big.Float).SetPrec(prec).Mul(result, result)
+			denominator := new(big.Float).SetPrec(prec).Sub(big.NewFloat(1), tanSquared)
+			result.Mul(result, big.NewFloat(2))
+			result.Quo(result, denominator)
+		}
+		// Apply other transformations
+		if reciprocal {
+			result.Quo(big.NewFloat(1), result)
+		}
+		if negateResult {
+			result.Neg(result)
+		}
+		return result
+	}
+
+	xSquared := new(big.Float).SetPrec(prec).Mul(reducedX, reducedX)
+
+	// Use precision-dependent number of terms for better accuracy
+	maxTerms := int(prec/4) + 50
+	if maxTerms > 200 {
+		maxTerms = 200
+	}
+
+	// Evaluate continued fraction from the bottom up with better precision
+	cf := new(big.Float).SetPrec(prec + 64).SetInt64(2*int64(maxTerms) + 1)
+
+	for i := maxTerms; i >= 1; i-- {
+		// cf = (2i+1) - x²/cf
+		temp := new(big.Float).SetPrec(prec+64).Quo(xSquared, cf)
+		cf.SetInt64(2*int64(i) + 1)
+		cf.Sub(cf, temp)
+	}
+
+	// Final step: tan(x) = x / (1 - x²/cf)
+	temp := new(big.Float).SetPrec(prec).Quo(xSquared, cf)
+	denominator := new(big.Float).SetPrec(prec).Sub(big.NewFloat(1), temp)
+	result := new(big.Float).SetPrec(prec).Quo(reducedX, denominator)
+
+	// Apply subdivision doubling formula if needed
+	for i := 0; i < subdivisions; i++ {
+		// tan(2x) = 2*tan(x) / (1 - tan²(x))
+		tanSquared := new(big.Float).SetPrec(prec).Mul(result, result)
+		newDenominator := new(big.Float).SetPrec(prec).Sub(big.NewFloat(1), tanSquared)
+		result.Mul(result, big.NewFloat(2))
+		result.Quo(result, newDenominator)
+	}
+
+	// Apply transformations in reverse order
+	if reciprocal {
+		result.Quo(big.NewFloat(1), result)
+	}
+
+	if negateResult {
+		result.Neg(result)
+	}
+
+	return result
+}
+
+// tanCORDIC calculates tan(x) using direct CORDIC tangent mode.
+// This implementation uses CORDIC vectoring mode for direct tangent computation.
+// This is a package-private method for performance comparison.
+func tanCORDIC(x *big.Float) *big.Float {
+	prec := x.Prec()
+
+	// Track transformations needed for argument reduction
+	negateResult := false
+	reciprocal := false
+
+	// Argument reduction to [-π/4, π/4] for CORDIC convergence
+	reducedX := new(big.Float).SetPrec(prec).Set(x)
+
+	// Handle negative values: tan(-x) = -tan(x)
+	if reducedX.Sign() < 0 {
+		negateResult = !negateResult
+		reducedX.Abs(reducedX)
+	}
+
+	// Reduce argument using tan(x) periodicity
 	for reducedX.Cmp(bigPi) >= 0 {
 		reducedX.Sub(reducedX, bigPi)
 	}
@@ -156,88 +270,103 @@ func tanContinuedFraction(x *big.Float) *big.Float {
 		reciprocal = !reciprocal
 	}
 
-	// Now reducedX is in [0, π/4] where continued fraction converges well
+	// Now reducedX is in [0, π/4] - suitable for CORDIC
 
-	// For very small values, use Taylor expansion instead
-	threshold := new(big.Float).SetPrec(prec).SetFloat64(0.1)
-	if reducedX.Cmp(threshold) < 0 {
-		result := tanTaylor(reducedX)
-		// Apply transformations in reverse order
-		if reciprocal {
-			result.Quo(one, result)
+	// CORDIC rotation mode to compute sin and cos simultaneously with higher precision
+	// Use higher internal precision for intermediate calculations
+	internalPrec := prec + 64
+
+	// High-precision CORDIC gain factor K = PRODUCT(0..n-1) sqrt(1 + 2^(-2i))
+	// 1/K ≈ 0.60725293500888125616944038415753462296702
+	invK := new(big.Float).SetPrec(internalPrec)
+	invK.SetString("0.60725293500888125616944038415753462296701947427363059429382421077774838754932863810214048")
+	if invK == nil {
+		invK = new(big.Float).SetPrec(internalPrec).SetFloat64(0.6072529350088812561694)
+	}
+
+	// Initial values for CORDIC
+	x0 := new(big.Float).SetPrec(internalPrec).Set(invK)
+	y0 := new(big.Float).SetPrec(internalPrec).SetFloat64(0)
+	z0 := new(big.Float).SetPrec(internalPrec).Set(reducedX)
+
+	// CORDIC iterations with improved precision
+	iterations := int(prec/2) + 30
+	if iterations > 100 {
+		iterations = 100
+	}
+
+	for i := 0; i < iterations; i++ {
+		var sigma int
+		if z0.Sign() >= 0 {
+			sigma = 1
+		} else {
+			sigma = -1
 		}
 
-		if negateResult {
-			result.Neg(result)
+		// Calculate 2^(-i)
+		powerOf2 := new(big.Float).SetPrec(internalPrec).SetInt64(1)
+		for j := 0; j < i; j++ {
+			powerOf2.Quo(powerOf2, big.NewFloat(2))
+		}
+
+		// Get high-precision arctan value
+		var arctanVal *big.Float
+		if i < len(arctanLookupTable) {
+			arctanVal, _ = new(big.Float).SetPrec(internalPrec).SetString(arctanLookupTable[i])
+		} else {
+			// For large i, arctan(2^(-i)) ≈ 2^(-i)
+			arctanVal = new(big.Float).SetPrec(internalPrec).Set(powerOf2)
+		}
+
+		// CORDIC rotation formulas
+		newX := new(big.Float).SetPrec(internalPrec).Set(x0)
+		temp := new(big.Float).SetPrec(internalPrec).Mul(y0, powerOf2)
+		if sigma < 0 {
+			newX.Add(newX, temp)
+		} else {
+			newX.Sub(newX, temp)
+		}
+
+		newY := new(big.Float).SetPrec(internalPrec).Set(y0)
+		temp = new(big.Float).SetPrec(internalPrec).Mul(x0, powerOf2)
+		if sigma < 0 {
+			newY.Sub(newY, temp)
+		} else {
+			newY.Add(newY, temp)
+		}
+
+		newZ := new(big.Float).SetPrec(internalPrec).Set(z0)
+		temp = new(big.Float).SetPrec(internalPrec).Set(arctanVal)
+		if sigma < 0 {
+			newZ.Add(newZ, temp)
+		} else {
+			newZ.Sub(newZ, temp)
+		}
+
+		x0, y0, z0 = newX, newY, newZ
+
+		// Early termination check
+		if new(big.Float).SetPrec(internalPrec).Abs(z0).Cmp(
+			new(big.Float).SetPrec(internalPrec).Quo(
+				big.NewFloat(1),
+				new(big.Float).SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(prec)), nil)),
+			),
+		) < 0 {
+			break
 		}
 	}
 
-	xSquared := new(big.Float).SetPrec(prec).Mul(reducedX, reducedX)
-
-	// Evaluate continued fraction from the bottom up
-	// Use more conservative number of terms
-	maxTerms := 30 + int(prec/16)
-	if maxTerms > 100 {
-		maxTerms = 100
-	}
-
-	cf := new(big.Float).SetPrec(prec).SetInt64(2*int64(maxTerms) + 1)
-
-	for i := maxTerms; i >= 1; i-- {
-		// cf = (2i+1) - x²/cf
-		temp := new(big.Float).SetPrec(prec).Quo(xSquared, cf)
-		cf.SetInt64(2*int64(i) + 1)
-		cf.Sub(cf, temp)
-	}
-
-	// Final step: tan(x) = x / (1 - x²/cf)
-	temp := new(big.Float).SetPrec(prec).Quo(xSquared, cf)
-	denominator := one
-	denominator.Sub(denominator, temp)
-
-	result := new(big.Float).SetPrec(prec).Quo(reducedX, denominator)
+	// Final result: tan(x) = sin(x)/cos(x) = y0/x0
+	result := new(big.Float).SetPrec(prec).Quo(y0, x0)
 
 	// Apply transformations in reverse order
 	if reciprocal {
-		result.Quo(one, result)
+		result.Quo(big.NewFloat(1), result)
 	}
 
 	if negateResult {
 		result.Neg(result)
 	}
-
-	return result
-}
-
-// tanCORDIC calculates tan(x) using CORDIC rotation mode (sin/cos approach).
-// This is a package-private method for performance comparison.
-func tanCORDIC(x *big.Float) *big.Float {
-	// Use existing CORDIC sin/cos functions for better reliability
-	precision := x.Prec()
-	sinX := sinCORDIC(x)
-	cosX := cosCORDIC(x)
-
-	// Check for division by zero (cos(x) ≈ 0 near π/2 + nπ)
-	zero := new(big.Float).SetPrec(precision).SetInt64(0)
-	threshold := new(big.Float).SetPrec(precision).Quo(
-		one,
-		new(big.Float).SetInt(new(big.Int).Exp(intTen, big.NewInt(int64(precision/8)), nil)),
-	)
-
-	if cosX.Cmp(threshold) < 0 && cosX.Cmp(zero.Neg(threshold)) > 0 {
-		// Return a large value indicating approach to infinity
-		result := new(big.Float).SetPrec(precision)
-		if sinX.Sign() > 0 {
-			result.SetInf(false) // +Inf
-		} else {
-			result.SetInf(true) // -Inf
-		}
-
-		return result
-	}
-
-	result := new(big.Float).SetPrec(precision)
-	result.Quo(sinX, cosX)
 
 	return result
 }

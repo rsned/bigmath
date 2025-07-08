@@ -161,8 +161,8 @@ func cosCORDIC(x *big.Float) *big.Float {
 
 		// Calculate arctan(2^(-i))
 		arctanTable := new(big.Float).SetPrec(precision)
-		if i < 50 {
-			arctanTable.Set(Atan(powerOf2))
+		if i < len(arctanLookupTable) {
+			arctanTable, _, _ = new(big.Float).SetPrec(precision).Parse(arctanLookupTable[i], 10)
 		} else {
 			arctanTable.Set(powerOf2)
 		}

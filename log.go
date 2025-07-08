@@ -6,7 +6,8 @@ import (
 	"math/big"
 )
 
-// Log computes natural logarithm using Newton's method
+// Log computes natural logarithm using a collection of methods depending
+// in the input value and precision.
 func Log(x *big.Float) *big.Float {
 	if x.Sign() <= 0 {
 		panic(fmt.Errorf("log: invalid input: cannot compute logarithm of non-positive number %v", x))
@@ -161,8 +162,6 @@ func logNewton(x *big.Float) *big.Float {
 // logTaylor computes natural logarithm using Taylor series expansion
 // Uses the series: log(1+x) = x - x²/2 + x³/3 - x⁴/4 + ...
 // Input x should be transformed so that |x-1| < 1 for convergence.
-//
-// This method skips the edge cases because those will be handled by Log.
 func logTaylor(x *big.Float) *big.Float {
 	// Validate input
 	if x.Sign() <= 0 {

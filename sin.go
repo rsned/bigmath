@@ -300,15 +300,16 @@ func sinCORDIC(x *big.Float) *big.Float {
 		// Calculate 2^(-i)
 		powerOf2 := new(big.Float).SetPrec(precision).SetInt64(1)
 		for j := 0; j < i; j++ {
-			powerOf2.Quo(powerOf2, big.NewFloat(2))
+			powerOf2.Quo(powerOf2, two)
 		}
 
 		// Calculate arctan(2^(-i))
-		arctanTable := new(big.Float).SetPrec(precision)
-		if i < 50 { // Use precomputed values for better precision
-			arctanTable.Set(Atan(powerOf2))
+		var arctanVal *big.Float
+		if i < len(arctanLookupTable) {
+			arctanVal, _, _ = new(big.Float).SetPrec(precision).Parse(arctanLookupTable[i], 10)
 		} else {
-			arctanTable.Set(powerOf2) // arctan(x) ≈ x for small x
+			// For large i, arctan(2^(-i)) ≈ 2^(-i)
+			arctanVal = new(big.Float).SetPrec(precision).Set(powerOf2)
 		}
 
 		if z0.Sign() >= 0 {
@@ -321,7 +322,7 @@ func sinCORDIC(x *big.Float) *big.Float {
 			newY.Add(newY, temp)
 
 			newZ := new(big.Float).SetPrec(precision).Set(z0)
-			newZ.Sub(newZ, arctanTable)
+			newZ.Sub(newZ, arctanVal)
 
 			x0, y0, z0 = newX, newY, newZ
 		} else {
@@ -334,7 +335,7 @@ func sinCORDIC(x *big.Float) *big.Float {
 			newY.Sub(newY, temp)
 
 			newZ := new(big.Float).SetPrec(precision).Set(z0)
-			newZ.Add(newZ, arctanTable)
+			newZ.Add(newZ, arctanVal)
 
 			x0, y0, z0 = newX, newY, newZ
 		}
@@ -369,16 +370,6 @@ func sinCORDICImproved(x *big.Float) *big.Float {
 	y0 := new(big.Float).SetPrec(precision)
 	z0 := new(big.Float).SetPrec(precision).Set(x)
 
-	// Pre-computed arctan table for better precision
-	arctanTable := []string{
-		"0.7853981633974483096156608458198757210492923498437764552437361480769541015715",
-		"0.4636476090008061162142562314612144020285370542861202638109330887201978641275",
-		"0.2449786631268641541720824812112758109141440983836811094869524315481911843615",
-		"0.1243549945467614350313548491638710255731701246556947126082685425914528521089",
-		"0.0624188099959573484739791129855051136067746570473679938618649164174388276779",
-		"0.0312398334302682762537117448924909770324468890755840296607390318932559406721",
-	}
-
 	// CORDIC iterations with improved precision
 	for i := 0; i < int(precision/2)+20; i++ {
 		var sigma int
@@ -396,8 +387,8 @@ func sinCORDICImproved(x *big.Float) *big.Float {
 
 		// Get arctan value
 		var arctanVal *big.Float
-		if i < len(arctanTable) {
-			arctanVal, _ = new(big.Float).SetPrec(precision).SetString(arctanTable[i])
+		if i < len(arctanLookupTable) {
+			arctanVal, _ = new(big.Float).SetPrec(precision).SetString(arctanLookupTable[i])
 		} else {
 			// For large i, arctan(2^(-i)) ≈ 2^(-i)
 			arctanVal = new(big.Float).SetPrec(precision).Set(powerOf2)

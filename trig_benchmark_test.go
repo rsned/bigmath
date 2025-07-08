@@ -49,6 +49,8 @@ var (
 	}
 )
 
+// runTrigBenchmark boilerplates the work of running the trig benchmarks
+// for the given methods and precisions.
 func runTrigBenchmark(b *testing.B, methods []benchAndCompare, precisions []uint) {
 	b.Helper()
 
@@ -65,12 +67,12 @@ func runTrigBenchmark(b *testing.B, methods []benchAndCompare, precisions []uint
 	}
 }
 
-// Basic timing benchmark.
+// BenchmarkTrigFunctions runa all the public trig methods benchmarks.
 func BenchmarkTrigFunctions(b *testing.B) {
 	runTrigBenchmark(b, trigPublicMethods, precisions)
 }
 
-// Performance comparison with standard math library.
+// BenchmarkTrigVsStdLib runs the trig methods against the standard math library.
 func BenchmarkTrigVsStdLib(b *testing.B) {
 	x := new(big.Float).SetPrec(64)
 	x.SetFloat64(0.9876)
@@ -80,7 +82,7 @@ func BenchmarkTrigVsStdLib(b *testing.B) {
 	}
 }
 
-// Precision scaling benchmarks.
+// BenchmarkTrigPrecisionScaling runs the trig methods against a range of precisions.
 func BenchmarkTrigPrecisionScaling(b *testing.B) {
 	for _, prec := range precisions {
 		x := new(big.Float).SetPrec(prec)
@@ -92,11 +94,11 @@ func BenchmarkTrigPrecisionScaling(b *testing.B) {
 	}
 }
 
-// Input value scaling benchmarks.
+// BenchmarkTrigCommonInputValues runs the trig methods against a range of common input values.
 func BenchmarkTrigCommonInputValues(b *testing.B) {
-	testValues := []float64{0.1, 1.0, math.Pi / 4, math.Pi / 3, math.Pi / 2, math.Pi, 2 * math.Pi}
+	//testValues := []float64{0.1, 1.0, math.Pi / 4, math.Pi / 3, math.Pi / 2, math.Pi, 2 * math.Pi}
 
-	for _, val := range testValues {
+	for _, val := range specialTrigValues {
 		x := big.NewFloat(val)
 		x.SetPrec(256)
 
