@@ -223,9 +223,6 @@ func TestStirlingApproximation(t *testing.T) {
 				test.input, relativeError, test.tolerance)
 			t.Logf("  Stirling: %.6e", stirlingFloat)
 			t.Logf("  Actual:   %.6e", actualFloat)
-		} else {
-			t.Logf("stirlingApproximation(%.0f) relative error: %.6f (within tolerance %.6f)",
-				test.input, relativeError, test.tolerance)
 		}
 	}
 }
@@ -248,11 +245,6 @@ func TestStirlingApproximationVsKnownValues(t *testing.T) {
 
 		// Use our helper function to see how many digits match
 		matchingDigits := compareNumberStrings(stirlingString, test.expected)
-
-		t.Logf("%s - Stirling's approximation:", test.name)
-		t.Logf("  Computed: %s", stirlingString)
-		t.Logf("  Expected: %s", test.expected)
-		t.Logf("  Matching digits: %d out of %d", matchingDigits, len(test.expected))
 
 		// For larger factorials, Stirling's approximation should match at least a few leading digits
 		// Note: Stirling's approximation accuracy varies, so we set conservative expectations
@@ -293,9 +285,6 @@ func TestStirlingApproximationEdgeCases(t *testing.T) {
 		if isValid != test.expected {
 			t.Errorf("stirlingApproximation(%v) validity = %v, expected %v (result: %v)",
 				test.input, isValid, test.expected, resultFloat)
-		} else {
-			t.Logf("stirlingApproximation(%v) = %.6e (valid: %v)",
-				test.input, resultFloat, isValid)
 		}
 	}
 }

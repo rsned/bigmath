@@ -15,6 +15,7 @@
 package bigmath
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 	"testing"
@@ -98,7 +99,7 @@ func TestSinVsMathSin(t *testing.T) {
 	}
 
 	for _, val := range testValues {
-		t.Run("", func(t *testing.T) {
+		t.Run(fmt.Sprintf("SinVsMathSin(%0.3f)", val), func(t *testing.T) {
 			x := big.NewFloat(val)
 			x.SetPrec(64)
 
@@ -117,39 +118,11 @@ func TestSinVsMathSin(t *testing.T) {
 	}
 }
 
-/*
-// testSinVsMathSinInDepth computes the failure rate by test tolerance.
-func TestSinVsMathSinInDepth(t *testing.T) {
-	for tolerance := 1e-1; tolerance >= 1e-14; tolerance /= 10 {
-		miss, total := 0, 0
-		for val := -2 * math.Pi; val <= 2*math.Pi; val += 0.01 {
-			t.Run(fmt.Sprintf("Sin(%0.4f)+tolerance=%0.2g", val, tolerance), func(_ *testing.T) {
-				x := big.NewFloat(val)
-				x.SetPrec(64)
-
-				bigResult := Sin(x)
-				bigFloat, _ := bigResult.Float64()
-				mathResult := math.Sin(val)
-
-				diff := math.Abs(bigFloat - mathResult)
-
-				if diff > tolerance {
-					miss++
-				}
-				total++
-			})
-		}
-
-		t.Errorf("Tolerance: %0.2g, Failure Rate: %0.2f%% (%d/%d)", tolerance, float64(miss)/float64(total)*100, miss, total)
-	}
-}
-*/
-
 // TestSinGoSourceVsMathSin tests sinGoSource against math.Sin for comprehensive range [-π, π]
 func TestSinGoSourceVsMathSin(t *testing.T) {
 	// Test at various precisions to ensure accuracy
 	for _, prec := range precisions {
-		t.Run("", func(t *testing.T) {
+		t.Run(fmt.Sprintf("SinGoSourceVsMathSin(%d)", prec), func(t *testing.T) {
 			// Test specific important values first
 			specialValues := []float64{
 				-math.Pi, -3 * math.Pi / 4, -2 * math.Pi / 3, -math.Pi / 2, -math.Pi / 3, -math.Pi / 4, -math.Pi / 6,
@@ -185,7 +158,6 @@ func TestSinGoSourceVsMathSin(t *testing.T) {
 			}
 
 			var maxDiff float64
-			var worstValue float64
 			errorCount := 0
 			totalCount := 0
 
@@ -202,7 +174,6 @@ func TestSinGoSourceVsMathSin(t *testing.T) {
 
 				if diff > maxDiff {
 					maxDiff = diff
-					worstValue = val
 				}
 
 				// Set tolerance based on precision
@@ -222,8 +193,6 @@ func TestSinGoSourceVsMathSin(t *testing.T) {
 
 			// Report statistics
 			errorRate := float64(errorCount) / float64(totalCount) * 100
-			t.Logf("Precision %d: Max diff=%.2e at x=%.6f, Error rate=%.2f%% (%d/%d errors)",
-				prec, maxDiff, worstValue, errorRate, errorCount, totalCount)
 
 			// Ensure error rate is acceptable
 			maxErrorRate := 1.0 // Allow up to 1% error rate
@@ -277,9 +246,6 @@ func TestSinGoSourceEdgeCases(t *testing.T) {
 			if diff > tolerance {
 				t.Errorf("sinGoSource(%s=%.15f): got %.15f, want %.15f, diff=%.2e",
 					tc.name, tc.input, resultFloat, expected, diff)
-			} else {
-				t.Logf("sinGoSource(%s=%.15f): got %.15f, want %.15f, diff=%.2e ✓",
-					tc.name, tc.input, resultFloat, expected, diff)
 			}
 		})
 	}
@@ -290,7 +256,7 @@ func TestSinGoSourceConsistency(t *testing.T) {
 	testValues := []float64{0, math.Pi / 6, math.Pi / 4, math.Pi / 3, math.Pi / 2, math.Pi}
 
 	for _, val := range testValues {
-		t.Run("", func(t *testing.T) {
+		t.Run(fmt.Sprintf("SinGoSourceConsistency(%0.3f)", val), func(t *testing.T) {
 			x := big.NewFloat(val)
 			x.SetPrec(256)
 

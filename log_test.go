@@ -501,8 +501,6 @@ func TestLogMethodsConvergenceStress(t *testing.T) {
 		t.Run(method.name+"_ConvergenceStress", func(t *testing.T) {
 			for _, prec := range precisions {
 				t.Run(fmt.Sprintf("Precision_%d", prec), func(t *testing.T) {
-					expectedMaxIters := method.expectedMaxIters(prec)
-
 					successCount := 0
 					totalTests := 0
 
@@ -552,9 +550,6 @@ func TestLogMethodsConvergenceStress(t *testing.T) {
 					successRate := float64(successCount) / float64(totalTests)
 
 					// Report results
-					t.Logf("%s (%s convergence) precision=%d: %d/%d successful (%.1f%%), max_iters=%d",
-						method.name, method.convergenceOrder, prec, successCount, totalTests,
-						successRate*100, expectedMaxIters)
 
 					// Minimum success rate expectations (some edge cases may fail)
 					minSuccessRate := 0.85 // 85% success rate minimum
@@ -721,9 +716,6 @@ func TestLogMethodsPrecisionScaling(t *testing.T) {
 				if err > expectedError && err > 1e-15 {
 					t.Logf("%s precision=%d: accuracy could be better - error %e (expected < %e)",
 						method.name, prec, err, expectedError)
-				} else {
-					t.Logf("%s precision=%d: excellent accuracy - error %e",
-						method.name, prec, err)
 				}
 
 				// Verify result has correct precision
